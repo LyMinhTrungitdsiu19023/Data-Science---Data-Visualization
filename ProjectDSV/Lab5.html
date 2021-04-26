@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<head>
+
+
+    <div id="para1">
+        <title>Lab 5</title>
+        <center>
+            <h1>Lab 5 –D3.js</h1>
+            <font face="Arial" size="4">Truong Thai Ngoc Toan </font>
+            <br>
+            <font face="Arial" size="4">ITDSIU19057</font>
+            <br>
+            <font face="Arial" size="4">Data science and data visualization</font>
+            <br>
+            <font face="Arial" size="4">This is all my own work. I did not copy the code from any other source</font>
+            <br>
+            <font size="6">------------------------------------------------</font>
+        </center>
+    </div>
+</head>
+<style>
+    div.tooltip {
+        position: absolute;
+        text-align: center;
+        opacity: 0.2;
+        width: fit-content;
+        height: fit-content;
+        padding: 10px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+</style>
+
+<script>
+
+    var rowConverter = function (d) {
+        return {
+            label: d["Province/State"] + " - " + d["Country/Region"],
+            day: parseInt(d["5/4/20"]),
+            lat: d.Lat,
+            long: d.Long
+        }
+    }
+
+    // set the dimensions and margins of the graph
+    var margin = { top: 10, right: 30, bottom: 50, left: 60 },
+        width = 460 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("body")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right + 350)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    //Read the data
+    d3.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv", rowConverter, function (data) {
+
+        // Add X axis
+        var x = d3.scaleLinear()
+            .domain([-200, 200])
+            .range([0, width + 350]);
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).ticks(20));
+
+        // Add Y axis
+        var y = d3.scaleLinear()
+            .domain([-60, 100])
+            .range([height, 0]);
+        svg.append("g")
+            .call(d3.axisLeft(y).ticks(16));
+
+        // X axis label:
+        svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("x", width / 2 + 200)
+            .attr("y", height + margin.top + 30)
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "20px")
+            .text("Longitude");
+
+        // Y axis label:
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -margin.left + 20)
+            .attr("x", -height / 2)
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "20px")
+            .text("Latitude")
+
+        // Add a tooltip div. Here I define the general feature of the tooltip: stuff that do not depend on the data point.
+        // Its opacity is set to 0: we don't see it by default.
+        var div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+
+
+        // A function that change this tooltip when the user hover a point.
+        // Its opacity is set to 1: we can now see it. Plus it set the text and position of tooltip depending on the datapoint (d)
+        var mouseover = function (d) {
+            div
+                .style("opacity", 1)
+        }
+
+        var mousemove = function (d) {
+            div
+                // .html("Country: " + d.label + "|| Latitude: " + d.lat + "|| Longitude: " + d.long + "|| Value: " + d.day)
+                .html("Country: ".bold().fontsize(3) + d.label +  "<br/>" +
+                      "Latitude: ".bold().fontsize(3) + d.lat +  "<br/>" +
+                      "Longitude: ".bold().fontsize(3) + d.long +  "<br/>" +
+                      "Value: ".bold().fontsize(3) + d.day)
+                .style("left", (d3.mouse(this)[0] + 120) + "px") // It is important to put the +90: other wise the tooltip is exactly where the point is an it creates a weird effect
+                .style("top", (d3.mouse(this)[1] + 200) + "px")
+                // .style("left", 2000 + "px") // It is important to put the +90: other wise the tooltip is exactly where the point is an it creates a weird effect
+                // .style("top", 2000 + "px")
+        }
+
+        // A function that change this tooltip when the leaves a point: just need to set opacity to 0 again
+        var mouseleave = function (d) {
+            div
+                .transition()
+                .duration(200)
+                .style("opacity", 0)
+        }
+
+        // Add dots
+        svg.append('g')
+            .selectAll("dot")
+            .data(data) // the .filter part is just to keep a few dots on the chart, not all of them
+            .enter()
+            .append("circle")
+            .attr("cx", function (d) { return x(d.long); })
+            .attr("cy", function (d) { return y(d.lat); })
+            .attr("r", 6)
+            .style("fill", "#69b3a2")
+            //.style("opacity", function (d) { return (parseFloat(d["5/4/2020"])); })
+            //.style("opacity", )
+            .style("stroke", "white")
+            .on("mouseover", mouseover)
+            .on("mousemove", mousemove)
+            .on("mouseleave", mouseleave)
+        //   .append("title")
+        //   .text(function (d) {
+        //     return "Country: " + d.label + " Latitude: " + d.lat + " Longitude: " + d.long + " Value: " + d.day;
+        //   });
+
+    })
+
+</script>
